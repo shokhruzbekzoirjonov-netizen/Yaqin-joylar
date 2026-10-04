@@ -1,38 +1,46 @@
 import { CATEGORIES, getCategory } from '../data/categories'
-import { distanceMeters } from '../utils/geo'
+import { cacheGet, cacheSet, cacheKey, geoKey, withDistance } from '../utils/cache'
 
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
 ]
 
-export async function searchOverpass(center, radius, categoryIds, signal) {
+export async function searchOverpass(center, radius, categoryIds, signal, onBatch) {
+  const key = cacheKey('o', geoKey(center), radius, [...categoryIds].sort().join(','))
+  const hit = cacheGet(key)
+  if (hit) return onBatch(withDistance(hit, center))
+
   const [lat, lon] = center
   const parts = CATEGORIES.filter(c => categoryIds.includes(c.id))
-    .flatMap(c => c.sel.map(s => `nwr${s}(around:${radius},${lat},${lon});`))
-  const body = 'data=' + encodeURIComponent(`[out:json][timeout:25];(${parts.join('')});out center 150;`)
+    .flatMap(c => c.sel.map(s => `nw${s}(around:${radius},${lat},${lon});`))
+  const body = 'data=' + encodeURIComponent(`[out:json][timeout:15];(${parts.join('')});out center 100 qt;`)
 
-  for (const url of ENDPOINTS) {
-    try {
-      const res = await fetch(url, { method: 'POST', body, signal,
+  // Barcha mirrorlarga bir vaqtda so'rov: eng tezi yutadi, qolganlari bekor qilinadi
+  const race = new AbortController()
+  signal.addEventListener('abort', () => race.abort())
+  let json
+  try {
+    json = await Promise.any(ENDPOINTS.map(async url => {
+      const res = await fetch(url, { method: 'POST', body, signal: race.signal,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const { elements } = await res.json()
-      return elements.map(el => {
-        const la = el.lat ?? el.center?.lat, lo = el.lon ?? el.center?.lon
-        if (la == null) return null
-        const t = el.tags || {}, cat = getCategory(t)
-        return {
-          id: `${el.type}-${el.id}`, lat: la, lon: lo, category: cat,
-          name: t.name || t['name:uz'] || t['name:ru'] || cat.label,
-          address: [t['addr:street'], t['addr:housenumber']].filter(Boolean).join(' '),
-          hours: t.opening_hours, image: t.image, rating: t.stars,
-          distance: distanceMeters(center, [la, lo]),
-        }
-      }).filter(Boolean).sort((a, b) => a.distance - b.distance)
-    } catch (e) {
-      if (e.name === 'AbortError') return []
-    }
-  }
-  throw new Error("Ma'lumotlarni yuklab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.")
+      return res.json()
+    }))
+  } catch {
+    throw new Error("Ma'lumotlarni yuklab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.")
+  } finally { race.abort() }
+
+  const list = json.elements.map(el => {
+    const la = el.lat ?? el.center?.lat, lo = el.lon ?? el.center?.lon
+    if (la == null) return null
+    const t = el.tags || {}, cat = getCategory(t)
+    return { id: `${el.type}-${el.id}`, lat: la, lon: lo, category: cat,
+      name: t.name || t['name:uz'] || t['name:ru'] || cat.label,
+      address: [t['addr:street'], t['addr:housenumber']].filter(Boolean).join(' '),
+      hours: t.opening_hours, hoursChecked: true, image: t.image, rating: t.stars }
+  }).filter(Boolean)
+  cacheSet(key, list)
+  onBatch(withDistance(list, center))
 }

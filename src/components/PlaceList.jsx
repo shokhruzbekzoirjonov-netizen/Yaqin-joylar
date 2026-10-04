@@ -53,7 +53,7 @@ export default function PlaceList({ places, loading, error, onRetry, selectedId,
               <span className="px-1">·</span>{formatDistance(p.distance)}
             </p>
             {p.address && <p className="flex items-center gap-1 truncate text-xs text-slate-500"><MapPin size={12} className="shrink-0" />{p.address}</p>}
-            <p className="flex items-center gap-1 truncate text-xs text-slate-500"><Clock size={12} className="shrink-0" />{p.hours || "Ish vaqti noma'lum"}</p>
+            <p className="flex items-center gap-1 truncate text-xs text-slate-500"><Clock size={12} className="shrink-0" />{p.hours || (p.hoursChecked ? "Ish vaqti noma'lum" : "Ish vaqti: bosib ko'ring")}</p>
           </div>
           <a href={directionsUrl(p)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
             className="flex h-fit shrink-0 items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs text-white">

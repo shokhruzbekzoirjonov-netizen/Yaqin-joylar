@@ -5,7 +5,15 @@ import 'leaflet/dist/leaflet.css'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { formatDistance, directionsUrl, zoomForRadius } from '../utils/geo'
 
-const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+const MT = import.meta.env.VITE_MAPTILER_KEY
+// MapTiler kaliti bo'lsa: 512px vektor-sifatli plitkalar (haqiqiy tungi rejim bilan).
+// Bo'lmasa: OSM + detectRetina (retina ekranda ikki baravar aniq plitkalar).
+const getTiles = dark => MT
+  ? { url: `https://api.maptiler.com/maps/${dark ? 'streets-v2-dark' : 'streets-v2'}/{z}/{x}/{y}.png?key=${MT}`,
+      tileSize: 512, zoomOffset: -1, maxZoom: 20,
+      attribution: '&copy; MapTiler &copy; OpenStreetMap contributors' }
+  : { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19, detectRetina: true,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }
 const iconCache = {}
 function pin(cat) {
   if (!iconCache[cat.id]) {
@@ -35,8 +43,8 @@ export default function MapView({ center, radius, places, selectedId, onPick, da
   const focus = useMemo(() => places.find(p => p.id === selectedId), [places, selectedId])
   return (
     <MapContainer center={center} zoom={zoomForRadius(radius)} scrollWheelZoom>
-      <TileLayer url={OSM_TILES} maxZoom={19} className="osm-tiles"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
+      <TileLayer key={MT ? String(dark) : 'osm'} {...getTiles(dark)} keepBuffer={4}
+        className={MT ? '' : 'osm-tiles'} />
       <Controller center={center} radius={radius} focus={focus} />
       <ClickToSet onPick={onPick} />
       <Marker position={center} icon={meIcon} />

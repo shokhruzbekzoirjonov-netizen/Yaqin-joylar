@@ -18,7 +18,7 @@ export default function App() {
 
   useEffect(() => { if (geo.position) setCenter(geo.position) }, [geo.position])
 
-  const { places, loading, error, refetch } = useNearbyPlaces(center, radius, selected)
+  const { places, loading, loadingMore, error, refetch, enrich } = useNearbyPlaces(center, radius, selected)
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     return q ? places.filter(p => p.name.toLowerCase().includes(q)) : places
@@ -33,9 +33,9 @@ export default function App() {
         <FilterPanel {...{ query, setQuery, selected, toggle, setAll, radius, setRadius, dark, toggleTheme }}
           onLocate={geo.locate} locating={geo.loading} />
         {geo.error && <p className="bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">{geo.error}</p>}
-        <p className="px-3 py-1 text-[11px] text-slate-400">Ma'lumot manbai: {PROVIDER === 'google' ? 'Google Places' : 'OpenStreetMap (Google kaliti topilmadi)'}</p>
+        <p className="px-3 py-1 text-[11px] text-slate-400">Ma'lumot manbai: {PROVIDER === 'google' ? 'Google Places' : 'OpenStreetMap (Google kaliti topilmadi)'}{loadingMore && ' · yuklanmoqda…'}</p>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <PlaceList places={visible} {...{ loading, error, selectedId }} onRetry={refetch} onSelect={setSelectedId} />
+          <PlaceList places={visible} {...{ loading, error, selectedId }} onRetry={refetch} onSelect={id => { setSelectedId(id); enrich(id) }} />
         </div>
       </aside>
       <main className="order-1 h-[42vh] md:order-2 md:h-full md:flex-1">
