@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+html, body, #root { height: 100%; }
+.leaflet-container { height: 100%; width: 100%; }
+/* OSM'da tungi plitka yo'q: kunduzgi plitkani CSS orqali qoraytiramiz */
+.dark .osm-tiles { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9); }
