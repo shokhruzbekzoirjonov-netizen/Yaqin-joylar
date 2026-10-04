@@ -10,12 +10,14 @@ const ENDPOINTS = [
 export async function searchOverpass(center, radius, categoryIds, signal, onBatch) {
   const key = cacheKey('o', geoKey(center), radius, [...categoryIds].sort().join(','))
   const hit = cacheGet(key)
-  if (hit) return onBatch(withDistance(hit, center))
+  if (hit) return onBatch(withDistance(hit, center).filter(p => p.distance <= radius))
 
   const [lat, lon] = center
+  const dLat = radius / 111320, dLon = radius / (111320 * Math.cos((lat * Math.PI) / 180))
+  const bbox = `${lat - dLat},${lon - dLon},${lat + dLat},${lon + dLon}` // bbox "around"dan ancha tez
   const parts = CATEGORIES.filter(c => categoryIds.includes(c.id))
-    .flatMap(c => c.sel.map(s => `nw${s}(around:${radius},${lat},${lon});`))
-  const body = 'data=' + encodeURIComponent(`[out:json][timeout:15];(${parts.join('')});out center 100 qt;`)
+    .flatMap(c => c.sel.map(s => `nw${s}(${bbox});`))
+  const body = 'data=' + encodeURIComponent(`[out:json][timeout:10];(${parts.join('')});out center 60 qt;`)
 
   // Barcha mirrorlarga bir vaqtda so'rov: eng tezi yutadi, qolganlari bekor qilinadi
   const race = new AbortController()
@@ -42,5 +44,5 @@ export async function searchOverpass(center, radius, categoryIds, signal, onBatc
       hours: t.opening_hours, hoursChecked: true, image: t.image, rating: t.stars }
   }).filter(Boolean)
   cacheSet(key, list)
-  onBatch(withDistance(list, center))
+  onBatch(withDistance(list, center).filter(p => p.distance <= radius))
 }

@@ -33,15 +33,7 @@ export default function App() {
         <FilterPanel {...{ query, setQuery, selected, toggle, setAll, radius, setRadius, dark, toggleTheme }}
           onLocate={geo.locate} locating={geo.loading} />
         {geo.error && <p className="bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">{geo.error}</p>}
-        {PROVIDER !== 'google' && (
-          <div className="bg-red-50 px-3 py-2 text-xs text-red-800 dark:bg-red-950 dark:text-red-200">
-            Google kaliti o'qilmadi, shuning uchun sekin OpenStreetMap ishlatilyapti. Loyiha papkasida (package.json yonida)
-            <code className="mx-1 rounded bg-black/10 px-1">.env</code> fayl yarating:
-            <code className="mx-1 rounded bg-black/10 px-1">VITE_GOOGLE_MAPS_API_KEY=AIza...</code>
-            keyin <code className="mx-1 rounded bg-black/10 px-1">npm run dev</code> ni to'xtatib qayta ishga tushiring.
-          </div>
-        )}
-        <p className="px-3 py-1 text-[11px] text-slate-400">Ma'lumot manbai: {PROVIDER === 'google' ? 'Google Places' : 'OpenStreetMap (Google kaliti topilmadi)'}{loadingMore && ' · yuklanmoqda…'}</p>
+        <p className="px-3 py-1 text-[11px] text-slate-400">Ma'lumot manbai: {PROVIDER === 'google' ? 'Google Places' : 'OpenStreetMap'}{loadingMore && ' · yuklanmoqda…'}</p>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <PlaceList places={visible} {...{ loading, error, selectedId }} onRetry={refetch} onSelect={id => { setSelectedId(id); enrich(id) }} />
         </div>
