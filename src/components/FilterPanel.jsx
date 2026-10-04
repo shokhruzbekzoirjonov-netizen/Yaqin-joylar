@@ -35,7 +35,7 @@ export default function FilterPanel({ query, setQuery, selected, toggle, setAll,
         ))}
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button onClick={setAll} className="shrink-0 rounded-full border border-slate-300 px-3 py-1 text-sm dark:border-slate-700">
           {selected.length === CATEGORIES.length ? 'Tozalash' : 'Hammasi'}
         </button>

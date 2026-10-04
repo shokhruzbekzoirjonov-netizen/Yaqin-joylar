@@ -5,6 +5,7 @@ import { searchOverpass } from '../services/overpass'
 // Kalit bo'lsa Google Places, bo'lmasa Overpass (OSM)
 export const PROVIDER = GOOGLE_KEY ? 'google' : 'osm'
 const search = GOOGLE_KEY ? searchGoogle : searchOverpass
+if (!GOOGLE_KEY) console.warn('VITE_GOOGLE_MAPS_API_KEY topilmadi: .env faylini tekshiring va dev serverni qayta ishga tushiring.')
 
 export function useNearbyPlaces(center, radius, categoryIds) {
   const [places, setPlaces] = useState([])
